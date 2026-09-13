@@ -88,3 +88,31 @@ export const listPullRequestsByRepo = query({
     return await github.listPullRequestsByRepo(ctx, args);
   },
 });
+
+export const getStats = query({
+  args: {},
+  handler: async (ctx) => {
+    return await github.getStats(ctx);
+  },
+});
+
+export const listRecentIssues = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    return await github.listRecentIssues(ctx, args);
+  },
+});
+
+export const listRecentPullRequests = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    return await github.listRecentPullRequests(ctx, args);
+  },
+});
+
+export const listRecentWebhookEvents = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    return await github.listRecentWebhookEvents(ctx, args);
+  },
+});
