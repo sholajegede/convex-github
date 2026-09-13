@@ -10,8 +10,6 @@
 
 import type { FunctionReference } from "convex/server";
 
-type State = "open" | "closed";
-
 /**
  * A utility for referencing a Convex component's exposed API.
  *
@@ -47,7 +45,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           labels?: Array<string>;
           number: number;
           repo: string;
-          state: State;
+          state: "open" | "closed";
           title: string;
           updatedAt: number;
           url: string;
@@ -69,11 +67,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           number: number;
           pullRequestId: string;
           repo: string;
-          state: State;
+          state: "open" | "closed";
           title: string;
           updatedAt: number;
           url: string;
         },
+        Name
+      >;
+      getStats: FunctionReference<
+        "query",
+        "internal",
+        {},
+        { issues: number; pullRequests: number; webhookEvents: number },
         Name
       >;
       listIssuesByRepo: FunctionReference<
@@ -90,7 +95,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           labels?: Array<string>;
           number: number;
           repo: string;
-          state: State;
+          state: "open" | "closed";
           title: string;
           updatedAt: number;
           url: string;
@@ -112,10 +117,68 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           number: number;
           pullRequestId: string;
           repo: string;
-          state: State;
+          state: "open" | "closed";
           title: string;
           updatedAt: number;
           url: string;
+        }>,
+        Name
+      >;
+      listRecentIssues: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          assignees?: Array<string>;
+          authorLogin?: string;
+          createdAt: number;
+          issueId: string;
+          labels?: Array<string>;
+          number: number;
+          repo: string;
+          state: "open" | "closed";
+          title: string;
+          updatedAt: number;
+          url: string;
+        }>,
+        Name
+      >;
+      listRecentPullRequests: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          authorLogin?: string;
+          baseRef?: string;
+          createdAt: number;
+          headRef?: string;
+          merged: boolean;
+          number: number;
+          pullRequestId: string;
+          repo: string;
+          state: "open" | "closed";
+          title: string;
+          updatedAt: number;
+          url: string;
+        }>,
+        Name
+      >;
+      listRecentWebhookEvents: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          eventId: string;
+          eventType: string;
+          payload: string;
+          receivedAt: number;
+          repo?: string;
         }>,
         Name
       >;
@@ -129,7 +192,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           labels?: Array<string>;
           number: number;
           repo: string;
-          state: State;
+          state: "open" | "closed";
           title: string;
           url: string;
         },
@@ -147,7 +210,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           number: number;
           pullRequestId: string;
           repo: string;
-          state: State;
+          state: "open" | "closed";
           title: string;
           url: string;
         },
@@ -157,7 +220,14 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       updateIssueState: FunctionReference<
         "mutation",
         "internal",
-        { issueId: string; state: State },
+        { issueId: string; state: "open" | "closed" },
+        null,
+        Name
+      >;
+      updatePullRequestState: FunctionReference<
+        "mutation",
+        "internal",
+        { merged: boolean; pullRequestId: string; state: "open" | "closed" },
         null,
         Name
       >;

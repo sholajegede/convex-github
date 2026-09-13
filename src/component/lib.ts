@@ -162,6 +162,85 @@ export const updateIssueState = mutation({
   },
 });
 
+export const updatePullRequestState = mutation({
+  args: {
+    pullRequestId: v.string(),
+    state: stateValidator,
+    merged: v.boolean(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("pullRequests")
+      .withIndex("by_pullRequestId", (q) => q.eq("pullRequestId", args.pullRequestId))
+      .first();
+    if (!existing) return null;
+    await ctx.db.patch(existing._id, {
+      state: args.state,
+      merged: args.merged,
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+// ─── Dashboard / history ────────────────────────────────────────────────────
+
+export const getStats = query({
+  args: {},
+  returns: v.object({
+    issues: v.number(),
+    pullRequests: v.number(),
+    webhookEvents: v.number(),
+  }),
+  handler: async (ctx) => {
+    const [issues, pullRequests, webhookEvents] = await Promise.all([
+      ctx.db.query("issues").collect(),
+      ctx.db.query("pullRequests").collect(),
+      ctx.db.query("webhookEvents").collect(),
+    ]);
+    return {
+      issues: issues.length,
+      pullRequests: pullRequests.length,
+      webhookEvents: webhookEvents.length,
+    };
+  },
+});
+
+export const listRecentIssues = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(issueValidator),
+  handler: async (ctx, args) => {
+    return await ctx.db.query("issues").order("desc").take(args.limit ?? 30);
+  },
+});
+
+export const listRecentPullRequests = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(pullRequestValidator),
+  handler: async (ctx, args) => {
+    return await ctx.db.query("pullRequests").order("desc").take(args.limit ?? 30);
+  },
+});
+
+export const listRecentWebhookEvents = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id("webhookEvents"),
+      _creationTime: v.number(),
+      eventId: v.string(),
+      eventType: v.string(),
+      repo: v.optional(v.string()),
+      payload: v.string(),
+      receivedAt: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db.query("webhookEvents").order("desc").take(args.limit ?? 30);
+  },
+});
+
 export const checkAndRecordEvent = mutation({
   args: {
     eventId: v.string(),

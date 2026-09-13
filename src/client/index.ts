@@ -232,6 +232,19 @@ export class GitHub {
       mergeMethod?: "merge" | "squash" | "rebase";
     },
   ): Promise<void> {
+    // The merge endpoint's response (`{ sha, merged, message }`) doesn't include the
+    // PR's id, and Convex records are keyed by pullRequestId — so without this lookup
+    // the local mirror would only ever update once the `pull_request` webhook arrives,
+    // leaving it stuck on "open" for anyone who hasn't wired up a public webhook yet.
+    const prRes = await fetch(
+      `${GITHUB_API_BASE}/repos/${args.owner}/${args.repo}/pulls/${args.pullNumber}`,
+      { headers: this.headers() },
+    );
+    if (!prRes.ok) {
+      throw new Error(`Failed to look up GitHub pull request: ${prRes.status} ${await prRes.text()}`);
+    }
+    const pr = (await prRes.json()) as { id: number };
+
     const res = await fetch(
       `${GITHUB_API_BASE}/repos/${args.owner}/${args.repo}/pulls/${args.pullNumber}/merge`,
       {
@@ -243,6 +256,12 @@ export class GitHub {
     if (!res.ok) {
       throw new Error(`Failed to merge GitHub pull request: ${res.status} ${await res.text()}`);
     }
+
+    await ctx.runMutation(this.component.lib.updatePullRequestState, {
+      pullRequestId: String(pr.id),
+      state: "closed",
+      merged: true,
+    });
   }
 
   async getIssue(ctx: RunQueryCtx, args: { issueId: string }) {
@@ -259,6 +278,22 @@ export class GitHub {
 
   async listPullRequestsByRepo(ctx: RunQueryCtx, args: { repo: string; limit?: number }) {
     return await ctx.runQuery(this.component.lib.listPullRequestsByRepo, args);
+  }
+
+  async getStats(ctx: RunQueryCtx) {
+    return await ctx.runQuery(this.component.lib.getStats, {});
+  }
+
+  async listRecentIssues(ctx: RunQueryCtx, args?: { limit?: number }) {
+    return await ctx.runQuery(this.component.lib.listRecentIssues, args ?? {});
+  }
+
+  async listRecentPullRequests(ctx: RunQueryCtx, args?: { limit?: number }) {
+    return await ctx.runQuery(this.component.lib.listRecentPullRequests, args ?? {});
+  }
+
+  async listRecentWebhookEvents(ctx: RunQueryCtx, args?: { limit?: number }) {
+    return await ctx.runQuery(this.component.lib.listRecentWebhookEvents, args ?? {});
   }
 }
 
