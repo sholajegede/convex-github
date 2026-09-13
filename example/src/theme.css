@@ -195,6 +195,27 @@ body {
   padding: 0.9rem 1rem 0.4rem;
 }
 
+.connect-repo {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 1rem 0.9rem;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.connect-repo input {
+  flex: 1;
+  min-width: 220px;
+  font-size: 0.8rem;
+}
+.connect-repo .error-text {
+  width: 100%;
+  text-align: center;
+  margin-top: 0;
+}
+
 .chip-row {
   display: flex;
   gap: 0.4rem;

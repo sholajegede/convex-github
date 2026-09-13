@@ -325,7 +325,7 @@ The `example/` app is a full interactive demo, not just a form:
 - **Pull Requests** — merge an open pull request with your choice of merge method; Convex's copy updates immediately, it doesn't wait for the webhook.
 - **Webhooks** — a live, expandable feed of every raw delivery to `/webhooks/github`, across every repo, so you can watch signature verification and deduplication happen in real time.
 - **History** — every issue and pull request this component has ever recorded, newest first, across every repo, with a one-click "open follow-up issue" action.
-- A repo switcher to flip between a few example repos, and a sidebar **Activity** console logging every action call this demo makes, with its result or error.
+- A repo switcher, with a "Connect your own repo" field so you can point the demo at any throwaway `owner/repo` of your own, plus a sidebar **Activity** console logging every action call this demo makes, with its result or error.
 
 Run it from the repo root (not `example/`):
 

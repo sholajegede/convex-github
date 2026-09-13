@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Corners, Chip } from "./ui";
+import { Corners, Chip, TextInput, Button } from "./ui";
 
 export type Tab = "issues" | "pullRequests" | "webhooks" | "history";
 
@@ -26,17 +27,45 @@ function FlowDiagram() {
   );
 }
 
-const DEMO_REPOS = [
-  "sholajegede/convex-github-scratch-repo",
-  "sholajegede/the-convex-reactor",
-  "convex-dev/convex-backend",
-];
+function ConnectRepo(props: { onConnect: (repo: string) => void }) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function submit() {
+    const trimmed = value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+    const parts = trimmed.split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      setError("Enter it as owner/repo, e.g. octocat/hello-world");
+      return;
+    }
+    setError(null);
+    props.onConnect(trimmed);
+    setValue("");
+  }
+
+  return (
+    <div className="connect-repo">
+      <TextInput
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+        placeholder="owner/repo — connect any throwaway repo of your own"
+      />
+      <Button variant="secondary" onClick={submit} disabled={!value.trim()}>
+        Connect
+      </Button>
+      {error && <p className="error-text">{error}</p>}
+    </div>
+  );
+}
 
 export function Header(props: {
   tab: Tab;
   onTab: (t: Tab) => void;
   repo: string;
-  onRepo: (repo: string) => void;
+  repos: string[];
+  onSelectRepo: (repo: string) => void;
+  onAddRepo: (repo: string) => void;
 }) {
   const stats = useQuery(api.example.getStats);
 
@@ -73,12 +102,13 @@ export function Header(props: {
       </div>
       <div className="hero-stripe" />
       <div className="repo-switch">
-        {DEMO_REPOS.map((r) => (
-          <Chip key={r} active={props.repo === r} onClick={() => props.onRepo(r)}>
+        {props.repos.map((r) => (
+          <Chip key={r} active={props.repo === r} onClick={() => props.onSelectRepo(r)}>
             {r}
           </Chip>
         ))}
       </div>
+      <ConnectRepo onConnect={props.onAddRepo} />
       <nav className="tabs">
         <button className={`tab${props.tab === "issues" ? " active" : ""}`} onClick={() => props.onTab("issues")}>
           Issues
