@@ -27,6 +27,7 @@ This is a [Convex component](https://convex.dev/components): its `issues`, `pull
 - [Type Reference](#type-reference)
 - [Webhook Events](#webhook-events)
 - [Database Schema](#database-schema)
+- [Example App](#example-app)
 - [Testing](#testing)
 - [Limitations](#limitations)
 - [Troubleshooting](#troubleshooting)
@@ -171,7 +172,7 @@ export const merge = action({
 });
 ```
 
-Pass `mergeMethod: "merge" | "squash" | "rebase"` to control the merge strategy (defaults to `"merge"`). The pull request's own `pull_request` webhook event (not this call) is what updates its `merged` and `state` fields in Convex, since GitHub's merge response doesn't include the full PR payload.
+Pass `mergeMethod: "merge" | "squash" | "rebase"` to control the merge strategy (defaults to `"merge"`). `mergePullRequest` looks the pull request up first to get its id (GitHub's merge response doesn't include it), merges it, then immediately patches its `merged` and `state` fields in Convex — like `closeIssue`, it doesn't wait for the `pull_request` webhook to arrive.
 
 ### Read issues and pull requests reactively
 
@@ -200,6 +201,10 @@ Every `issues` and `pull_request` webhook event patches or inserts a row, so thi
 | `listIssuesByRepo(ctx, { repo, limit? })` | Most recently updated issues for a repo, newest first. |
 | `getPullRequest(ctx, { pullRequestId })` | Fetch one pull request by its GitHub numeric ID (as a string). |
 | `listPullRequestsByRepo(ctx, { repo, limit? })` | Most recently updated pull requests for a repo, newest first. |
+| `getStats(ctx)` | Counts of issues, pull requests, and webhook deliveries recorded so far. |
+| `listRecentIssues(ctx, { limit? })` | Most recently updated issues across every repo, newest first. |
+| `listRecentPullRequests(ctx, { limit? })` | Most recently updated pull requests across every repo, newest first. |
+| `listRecentWebhookEvents(ctx, { limit? })` | Most recent raw webhook deliveries across every repo, newest first. |
 
 ### Webhook
 
@@ -306,11 +311,32 @@ webhookEvents: {
 }
 ```
 
-This schema lives entirely inside the component's isolated namespace — it will never collide with tables in your app's own `convex/schema.ts`.
+This schema lives entirely inside the component's isolated namespace — it will never collide with tables in your app's own `convex/schema.ts`. `getStats`, `listRecentIssues`, `listRecentPullRequests`, and `listRecentWebhookEvents` scan across every repo to power a dashboard-style view — they're not indexed by repo, so they're meant for demos and internal tooling, not high-volume production use.
 
 ## Customer IDs
 
 Issues and pull requests are keyed by GitHub's own numeric `id` field (converted to a string), not by `number` — `number` is only unique within a single repo, while `id` is globally unique and stable even if a repo is renamed or transferred. Always look issues and pull requests up by `repo` + `number` for UI purposes, but store and index on `issueId`/`pullRequestId`.
+
+## Example App
+
+The `example/` app is a full interactive demo, not just a form:
+
+- **Issues** — open an issue (with suggestion chips), comment on it, and close it, all reactively reflected below.
+- **Pull Requests** — merge an open pull request with your choice of merge method; Convex's copy updates immediately, it doesn't wait for the webhook.
+- **Webhooks** — a live, expandable feed of every raw delivery to `/webhooks/github`, across every repo, so you can watch signature verification and deduplication happen in real time.
+- **History** — every issue and pull request this component has ever recorded, newest first, across every repo, with a one-click "open follow-up issue" action.
+- A repo switcher to flip between a few example repos, and a sidebar **Activity** console logging every action call this demo makes, with its result or error.
+
+Run it from the repo root (not `example/`):
+
+```sh
+npm install --legacy-peer-deps
+npx convex env set GITHUB_TOKEN ghp_...
+npx convex env set GITHUB_WEBHOOK_SECRET whsec_...
+npm run dev
+```
+
+Then register a webhook on a scratch repo pointed at `https://<your-dev-deployment>.convex.site/webhooks/github` (see [Quick Start](#quick-start)) to see live deliveries land in the Webhooks tab.
 
 ## Testing
 
@@ -319,7 +345,7 @@ npm run test
 npm run typecheck
 ```
 
-Tests use [`convex-test`](https://www.npmjs.com/package/convex-test) and cover `recordIssue`/`recordPullRequest` upsert behavior (including that `closeIssue`'s `updateIssueState` path never blanks out an issue's `title` or `url`), `listIssuesByRepo`/`listPullRequestsByRepo` scoping by repo, and webhook idempotency via `checkAndRecordEvent`.
+Tests use [`convex-test`](https://www.npmjs.com/package/convex-test) and cover `recordIssue`/`recordPullRequest` upsert behavior (including that `closeIssue`'s `updateIssueState` path never blanks out an issue's `title` or `url`), `updatePullRequestState` marking a PR merged without touching its title, `listIssuesByRepo`/`listPullRequestsByRepo` scoping by repo, webhook idempotency via `checkAndRecordEvent`, and the cross-repo `getStats`/`listRecentIssues`/`listRecentPullRequests`/`listRecentWebhookEvents` queries.
 
 ## Limitations
 
@@ -335,6 +361,8 @@ Tests use [`convex-test`](https://www.npmjs.com/package/convex-test) and cover `
 **Issues never appear in queries** — confirm the webhook's "Recent Deliveries" tab in GitHub shows a `200` response, and that the webhook is subscribed to the **Issues** and **Pull requests** events specifically (not just "Just the push event").
 
 **`closeIssue` throws a 404** — the issue number must belong to the same `owner/repo` the token has access to; fine-grained tokens scoped to a different repo will fail here even if the issue ID exists in your Convex table from a webhook on another repo.
+
+**`mergePullRequest` throws a 404 before merging anything** — that's the id lookup (`GET .../pulls/{pullNumber}`) that runs first, not the merge itself; same cause and fix as the `closeIssue` 404 above.
 
 ## Contributing
 
