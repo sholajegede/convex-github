@@ -148,7 +148,7 @@ export class GitHub {
   }
 
   async createIssue(
-    ctx: GenericActionCtx<GenericDataModel>,
+    ctx: RunMutationCtx,
     args: CreateIssueArgs,
   ): Promise<{ number: number; url: string }> {
     const res = await fetch(`${GITHUB_API_BASE}/repos/${args.owner}/${args.repo}/issues`, {
@@ -191,7 +191,7 @@ export class GitHub {
   }
 
   async createIssueComment(
-    ctx: GenericActionCtx<GenericDataModel>,
+    ctx: RunMutationCtx,
     args: { owner: string; repo: string; issueNumber: number; body: string },
   ): Promise<{ url: string }> {
     const res = await fetch(
@@ -206,7 +206,7 @@ export class GitHub {
   }
 
   async closeIssue(
-    ctx: GenericActionCtx<GenericDataModel>,
+    ctx: RunMutationCtx,
     args: { owner: string; repo: string; issueNumber: number },
   ): Promise<void> {
     const res = await fetch(
@@ -224,7 +224,7 @@ export class GitHub {
   }
 
   async mergePullRequest(
-    ctx: GenericActionCtx<GenericDataModel>,
+    ctx: RunMutationCtx,
     args: {
       owner: string;
       repo: string;
@@ -299,4 +299,14 @@ export class GitHub {
 
 type RunQueryCtx = {
   runQuery: GenericActionCtx<GenericDataModel>["runQuery"];
+};
+
+// createIssue, createIssueComment, closeIssue, and mergePullRequest only
+// ever call ctx.runMutation — never runQuery, runAction, the scheduler, or
+// storage. Typing them against this minimal structural type instead of the
+// full GenericActionCtx<GenericDataModel> means they accept any real app's
+// ActionCtx, whose DataModel is a concrete set of tables (not assignable to
+// the generic GenericDataModel once an app defines any tables of its own).
+type RunMutationCtx = {
+  runMutation: GenericActionCtx<GenericDataModel>["runMutation"];
 };
