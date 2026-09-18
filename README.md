@@ -3,7 +3,7 @@
 Sync GitHub issues and pull requests into your Convex database reactively, and open issues, comment, and merge pull requests directly from Convex functions.
 
 [![npm version](https://img.shields.io/npm/v/convex-github)](https://www.npmjs.com/package/convex-github)
-[![Convex Component](https://www.convex.dev/components/badge/sholajegede/convex-github)](https://www.convex.dev/components/convex-github)
+[![Convex Component](https://www.convex.dev/components/badge/convex-github)](https://www.convex.dev/components/convex-github)
 [![npm downloads](https://img.shields.io/npm/dw/convex-github)](https://www.npmjs.com/package/convex-github)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 

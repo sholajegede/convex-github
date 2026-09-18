@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.6
+
+### Patch Changes
+
+- Fix the Convex directory badge image URL, which still pointed at `badge/sholajegede/convex-github` after the link URL was corrected in a previous release; both now use the plain `badge/convex-github` path.
+
 ## 0.0.5
 
 ### Patch Changes
